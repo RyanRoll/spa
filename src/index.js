@@ -1,62 +1,94 @@
+const title = 'Hello My電商'
+const API_URL = 'http://localhost:8787/api'
 
-$(".spa-menu__link").on("click", (event) => {
-  event.preventDefault();
-  const href = $(event.target).attr("href");
-  changeUrlPath(href);
-});
+$('.spa-menu__link').on('click', (event) => {
+  event.preventDefault()
+  const href = $(event.target).attr('href')
+  changeUrlPath(href)
+})
 
 // popstate provided by JS
-$(window).on("popstate", (event) => {
-  console.log("popstate", event);
-});
+$(window).on('popstate', (event) => {
+  console.log('popstate', event)
+})
 
 // create by us
-$(window).on("locationchange", async (event) => {
-  const url = event.detail.url;
-  console.log("locationchange", url);
+$(window).on('locationchange', async (event) => {
+  const url = event.detail.url
   switch (url) {
-    case "/abc": {
-      // const response = await fetch(
-      //   "https://data.tycg.gov.tw/opendata/datalist/datasetMeta/download?id=5ca2bfc7-9ace-4719-88ae-4034b9a5a55c&rid=a1b4714b-3b75-4ff8-a8f2-cc377e4eaa0f",
-      //   {
-      //     method: "get"
-      //   }
-      // );
-      // const data = await response.json();
-      // console.log("response", data);
-      $("#main").html("ABC Page");
-      $(document).prop("title", "Page ABC");
-      break;
+    case '/commodities': {
+      const response = await fetch(`${API_URL}/commodities`, {
+        method: 'get',
+      })
+      const data = await response.json()
+      const content = data.commodities.reduce((result, item) => {
+        return (
+          result +
+          `
+          <li>
+            <label>${item.name}</label>
+            <button class="spa_item--addToCar" data-id="${item.id}">加到購物車</button>
+            <br/>
+            <br/>
+          </li>
+        `
+        )
+      }, '')
+      $('#main').html(content)
+      $(document).prop('title', `${title} - 商品`)
+      break
     }
-    case "/def": {
-      $("#main").html("DEF Page");
-      $(document).prop("title", "Page DEF");
-      break;
+    case '/shoppingCarList': {
+      $('#main').html('DEF Page')
+      $(document).prop('title', `${title} - 購物車`)
+      break
     }
-    case "/ghi": {
-      $("#main").html("GHI Page");
-      $(document).prop("title", "Page GHI");
-      break;
+    case '/user': {
+      $('#main').html('GHI Page')
+      $(document).prop('title', `${title} - 會員中心`)
+      break
     }
     default: {
       //
     }
   }
-});
+})
 
-const { history } = window;
+$('#main').on('click', '.spa_item--addToCar', async (event) => {
+  const $button = $(event.target)
+  const id = $button.data('id')
+  const response = await fetch(`${API_URL}/shoppingCarList`, {
+    method: 'post',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      id,
+    }),
+  })
+  const data = await response.json()
+  if (data.result === 'ok') {
+    console.log('加入購物車成功!')
+  }
+})
+
+const { history } = window
 // const history  = window.history
 
 const changeUrlPath = (url, data) => {
   const historyData = {
     ...data,
-    url
-  };
-  history.pushState(historyData, "", url);
-  const event = new CustomEvent("locationchange", { detail: historyData });
-  window.dispatchEvent(event);
-};
+    url,
+  }
+  history.pushState(historyData, '', url)
+  const event = new CustomEvent('locationchange', { detail: historyData })
+  window.dispatchEvent(event)
+}
 
-$("#spa-back").on("click", () => {
-  history.back();
-});
+$('#spa-back').on('click', () => {
+  history.back()
+})
+
+$(document).ready(() => {
+  changeUrlPath(location.pathname)
+})
